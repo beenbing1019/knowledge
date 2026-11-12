@@ -23,6 +23,25 @@ ACK 與 FIN 可以合併，所以實際封包數不一定恰好四個。主動�
 
 例如檔案上傳時，客戶端送 FIN 只表示不再送位元組；伺服器仍可能正在寫檔。若要顯示「上傳成功」，應等待應用層的處理結果，不能只看 TCP 關閉流程。
 
+### 雙端時序示意
+
+```mermaid
+sequenceDiagram
+    participant C as 客戶端
+    participant S as 伺服器
+    C->>S: SYN，ISN = x
+    S->>C: SYN + ACK，ISN = y，確認 x + 1
+    C->>S: ACK，確認 y + 1
+    Note over C,S: 連線建立；不代表應用處理完成
+    C->>S: FIN，不再傳送
+    S->>C: ACK
+    Note over C,S: 客戶端半關閉寫入方向，仍可接收資料
+    S->>C: 尚未送完的資料或應用層結果
+    S->>C: FIN，不再傳送
+    C->>S: ACK
+    Note over C,S: ACK 與 FIN 可合併，實際封包數不一定是四個
+```
+
 ## 實務上怎麼處理？
 
 - 服務遇到大量半開連線：先量測 `SYN`、`SYN-ACK`、連線佇列與上游容量；可用平台提供的 SYN cookies 或上游流量防護，不能只調大應用程序數。

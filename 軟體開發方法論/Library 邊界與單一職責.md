@@ -53,6 +53,29 @@ if (postProcessor != null) {
 
 一般呼叫端不提供處理器，保留原來的寄信行為；客戶 A 的應用流程提供 HMAC 處理器。決定「客戶 A 要簽章」的是應用層，不再由 library 查使用者分類來決定。將來若簽章演算法從 HMAC-SHA-256 換成 HMAC-SHA-512，原作者主張只須替換應用層的處理器實作，不必再改共用 library 裡的客戶判斷。
 
+```mermaid
+flowchart LR
+    subgraph app["應用層：選擇客戶政策"]
+        choose{"客戶 A？"}
+        provide["提供 HMAC PostProcessor"]
+        none["不提供處理器"]
+        hmac["HMAC 處理信件內容"]
+        choose -- 是 --> provide
+        choose -- 否 --> none
+    end
+    subgraph lib["共用 library：產生並寄出信件"]
+        generate["產生信件內容"]
+        check{"有 PostProcessor？"}
+        send["寄出信件"]
+        generate --> check
+        check -- 無 --> send
+    end
+    provide -- "傳入 sendEmail" --> generate
+    none -- "呼叫 sendEmail" --> generate
+    check -- "有：呼叫 process(content)" --> hmac
+    hmac -- "回傳處理後內容" --> send
+```
+
 這個設計把兩種**變更理由**分開：寄信流程改變時修改 library；客戶的內容處理政策改變時修改應用層。這也是原文藉單一職責原則（Single Responsibility Principle）強調的重點：不只要讓現在的程式能跑，還要考慮未來改動會牽動誰。
 
 ## 方案的適用範圍與注意事項

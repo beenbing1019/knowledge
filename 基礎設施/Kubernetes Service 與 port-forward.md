@@ -25,6 +25,17 @@ minikube service <service-name> --url
 
 `<pod-name>` 和 `<service-name>` 是待替換的名稱。上述直接公開 Pod 適合示範；正式部署通常由 Deployment 管理 Pod，並用標籤選擇器讓 Service 找到後端。若 Pod 換了位置，Service 才能持續提供穩定入口。
 
+### 兩種連線路徑
+
+```mermaid
+flowchart LR
+    local["本機 8000"] --> forward["kubectl port-forward<br/>指令執行期間有效"]
+    forward --> pod["Pod 應用<br/>3000"]
+    cluster["叢集內用戶端<br/>Service DNS 名稱"] --> service["Service 穩定入口<br/>port 3000"]
+    service -->|"依標籤選擇器"| pod
+    service -->|"Pod 更換後仍可選取"| next["符合標籤的新 Pod<br/>targetPort 3000"]
+```
+
 參考：[Kubernetes 官方：kubectl expose](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_expose/)。
 
 ## 哪種入口適合？
